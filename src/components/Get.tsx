@@ -1,33 +1,38 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ItemBackground, ItemContainer, ItemHeader, ItemTitle, ItemImage, ItemBody, ItemMintNumber, ItemMintButton } from "../style/MintPageStyle";
-import React from "react";
-import { ethers } from 'ethers'
-import NFTCollection from '../contractABI/NFTCollection.json'
+import { ethers } from 'ethers';
+import Guestbook from '../contractABI/Guestbook.json';
+import {
+  ItemBackground,
+  ItemContainer,
+  ItemHeader,
+  ItemTitle,
+  ItemBody,
+  ItemAddMessageButton,
+  Table,
+  TableHeader,
+  TableCell,
+  TableRow
+} from "../style/NewPageStyle";
 
-const contractAddress = '0x761302F278B847FB933C4F28ea5c108F21942c48'
-const abi = NFTCollection.abi
+const contractAddress = '0x3A7d7307d6445a1d78aeAf6e1D9160383F709345';
+const abi = Guestbook.abi;
 
 export default function Get() {
+  const [messages, setMessages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalMessages, setTotalMessages] = useState(0);
+  const messagesPerPage = 5;
 
-  const [dataNFT, setDataNFT] = useState<any | null>(null);
-  const [currentNFT, setcurrentNFT] = useState(0);
-  const [numberNFTs, setNumberNFTs] = useState(0);
-
-  const getNFTsNumber = useCallback(async () => {
+  const fetchMessages = useCallback(async (startIndex:any, limit:any) => {
     try {
       const { ethereum } = window;
-
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
-        const nftContract = new ethers.Contract(contractAddress, abi, signer);
+        const guestbookContract = new ethers.Contract(contractAddress, abi, signer);
 
-        const res = await nftContract.totalSupply();
-        setNumberNFTs(res.toNumber());
-
-        if (res.toNumber() > 0) {
-          getNFTData(0);
-        }
+        const entries = await guestbookContract.getEntries(startIndex, limit);
+        setMessages(entries);
       } else {
         console.log('Ethereum object does not exist');
       }
@@ -36,47 +41,44 @@ export default function Get() {
     }
   }, []);
 
-  const getNFTData = useCallback(async (nftId: any) => {
+  const fetchTotalMessages = useCallback(async () => {
     try {
       const { ethereum } = window;
-
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
-        const nftContract = new ethers.Contract(contractAddress, abi, signer);
+        const guestbookContract = new ethers.Contract(contractAddress, abi, signer);
 
-        const res = await nftContract.getTokenDetails(nftId);
-        setDataNFT(res);
+        const total = await guestbookContract.getTotalEntries();
+        setTotalMessages(total.toNumber());
+        fetchMessages(0, messagesPerPage); // Load first page
       } else {
         console.log('Ethereum object does not exist');
       }
     } catch (err) {
       console.log(err);
     }
-  }, []);
+  }, [fetchMessages]);
 
-  const next = useCallback(async () => {
-    if (numberNFTs > 0) {
-      const newNFT = (currentNFT + 1) % numberNFTs;
-      setcurrentNFT(newNFT);
-      getNFTData(newNFT);
-    } else {
-      console.log("No NFTs available");
-    }
-  }, [currentNFT, numberNFTs, getNFTData]);
-
-  const prev = useCallback(async () => {
-    if (numberNFTs > 0) {
-      const newNFT = (currentNFT - 1 + numberNFTs) % numberNFTs;
-      setcurrentNFT(newNFT);
-      getNFTData(newNFT);
-    } else {
-      console.log("No NFTs available");
-    }
-  }, [currentNFT, numberNFTs, getNFTData]);
   useEffect(() => {
-    getNFTsNumber();
-  }, [getNFTsNumber]);
+    fetchTotalMessages();
+  }, [fetchTotalMessages]);
+
+  const handleNextPage = () => {
+    if ((currentPage + 1) * messagesPerPage < totalMessages) {
+      setCurrentPage(currentPage + 1);
+      fetchMessages((currentPage + 1) * messagesPerPage, messagesPerPage);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+      fetchMessages((currentPage - 1) * messagesPerPage, messagesPerPage);
+    }
+  };
+
+  const totalPages = Math.ceil(totalMessages / messagesPerPage);
 
   return (
     <div>
@@ -90,46 +92,48 @@ export default function Get() {
                     "1px 0px 0px black, 0px 1px 0px black, -1px 0px 0px black, 0px -1px 0px black",
                 }}
               >
-                All NFT's Minted
+                All Messages
               </label>
             </ItemTitle>
           </ItemHeader>
           <ItemBody>
             <div className="container text-center">
-              {numberNFTs > 0 ? (
+              {totalMessages > 0 ? (
                 <div>
-                  <br />
-                  <div style={{display:"flex", justifyContent:"center"}}>
-                    <img src={dataNFT && dataNFT.imageURI} alt="NFT" />
-                  </div>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <TableHeader>User</TableHeader>
+                        <TableHeader>Message</TableHeader>
+                        <TableHeader>Timestamp</TableHeader>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {messages.map((entry:any, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{`${entry.user.substring(0, 6)}...${entry.user.slice(-4)}`}</TableCell>
+                          <TableCell>{entry.message}</TableCell>
+                          <TableCell>{new Date(entry.timestamp * 1000).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </tbody>
+                  </Table>
                   <br />
                   <div>
-                    <b>Name:</b> {dataNFT && dataNFT.name}
-                  </div>
-                  <br />
-                  <div>
-                    <b>Description:</b> {dataNFT && dataNFT.description}
-                  </div>
-                  <br />
-                  <div>
-                    <ItemMintButton
-                      onClick={prev}
-                    >
+                    <ItemAddMessageButton onClick={handlePrevPage} disabled={currentPage === 0}>
                       Prev
-                    </ItemMintButton>
-                    <span><b>{currentNFT + 1}/{numberNFTs}</b></span>
-                    <ItemMintButton
-                      onClick={next}
-                    >
+                    </ItemAddMessageButton>
+                    <span><b>Page {currentPage + 1} / {totalPages}</b></span>
+                    <ItemAddMessageButton onClick={handleNextPage} disabled={(currentPage + 1) * messagesPerPage >= totalMessages}>
                       Next
-                    </ItemMintButton>
+                    </ItemAddMessageButton>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: "grid", justifyContent: "center" }}>
                   <br />
                   <label style={{ fontSize: "20px", fontWeight: "400" }}>
-                    There are no minted nfts
+                    There are no messages registered
                   </label>
                 </div>
               )}

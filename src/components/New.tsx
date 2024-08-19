@@ -1,18 +1,16 @@
 import { useMemo } from 'react';
-import { ItemBackground, ItemContainer, ItemHeader, ItemTitle, ItemImage, ItemBody, ItemMintNumber, ItemMintButton } from "../style/MintPageStyle";
+import { ItemBackground, ItemContainer, ItemHeader, ItemTitle, ItemBody, ItemAddMessageButton } from "../style/NewPageStyle";
 import React, { useCallback, useEffect, useState } from "react";
 import { ethers } from 'ethers'
-import NFTCollection from '../contractABI/NFTCollection.json'
+import Guestbook from '../contractABI/Guestbook.json'
 
-const contractAddress = '0x761302F278B847FB933C4F28ea5c108F21942c48'
-const abi = NFTCollection.abi
+const contractAddress = '0x3A7d7307d6445a1d78aeAf6e1D9160383F709345'
+const abi = Guestbook.abi
 
-export default function Mint() {
+export default function New() {
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
-  const [minting, setMinting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [registering, setRegistering] = useState(false);
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
 
   const checkWalletIsConnected = async () => {
@@ -39,31 +37,31 @@ export default function Mint() {
   };
 
 
-  const mint = async () => {
+  const addMessage = async () => {
     try {
       const { ethereum } = window
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
         const signer = provider.getSigner()
-        const nftContract = new ethers.Contract(
+        const guestbookContract = new ethers.Contract(
           contractAddress,
           abi,
           signer
         )
 
+        console.log(guestbookContract);
+
         console.log('Write to contract')
-        const tx = await nftContract.mintNFT(name,description,image)
-        setMinting(true);
+        const tx = await guestbookContract.addEntry(message)
+        setRegistering(true);
 
         console.log('Wait for the transaction to be confirmed')
         await tx.wait()
 
-        setMinting(false);
+        setRegistering(false);
 
-        setName("");
-        setDescription("");
-        setImage("");
+        setMessage("");
 
         console.log(
           `Transaction confirmed: https://scan.test.btcs.network/tx/${tx.hash}`
@@ -92,62 +90,41 @@ export default function Mint() {
                     "1px 0px 0px black, 0px 1px 0px black, -1px 0px 0px black, 0px -1px 0px black",
                 }}
               >
-                Mint NFT
+                New Message
               </label>
             </ItemTitle>
           </ItemHeader>
           <ItemBody>
             {currentAccount ? (
               <div className="container text-center">
-                {!minting ? (
+                {!registering ? (
                   <div>
                     <div>
                       <input
                         style={{ background: "white" }}
-                        placeholder="Name"
-                        value={name}
+                        placeholder="Message"
+                        value={message}
                         onChange={(e) =>
-                          setName(e.target.value)
+                          setMessage(e.target.value)
                         }
                       />
                     </div><br/>
-                    <div>
-                      <input
-                        style={{ background: "white" }}
-                        placeholder="Description"
-                        value={description}
-                        onChange={(e) =>
-                          setDescription(e.target.value)
-                        }
-                      />
-                    </div>
                     <br />
                     <div>
-                      <input
-                        style={{ background: "white" }}
-                        placeholder="Image URI"
-                        value={image}
-                        onChange={(e) =>
-                          setImage(e.target.value)
-                        }
-                      />
-                    </div>
-                    <br />
-                    <div>
-                      <ItemMintButton
+                      <ItemAddMessageButton
                         onClick={async () => {
-                          mint();
+                          addMessage();
                         }}
                       >
-                        Mint
-                      </ItemMintButton>
+                        Add Message
+                      </ItemAddMessageButton>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display: "grid", justifyContent: "center" }}>
                     <br />
                     <label style={{ "fontSize": "20px", "fontWeight": "400" }}>
-                      Minting...
+                      Adding Message...
                     </label>
                   </div>
                 )}
@@ -155,7 +132,7 @@ export default function Mint() {
               </div>
             ) : (
               <div style={{ "textAlign": "center" }}>
-                <span>Please login to Mint</span>
+                <span>Please login to add new message</span>
               </div>
             )}
           </ItemBody>
