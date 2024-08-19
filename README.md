@@ -192,6 +192,8 @@ npm run dev
 
 ## Add message
 
+<img src="https://raw.githubusercontent.com/open-web-academy/GuestBook-Tutorial-CORE/master/src/public/NewMessage.gif" width="50%">
 
-## Get MEssages
+## Get Messages
 
+<img src="https://raw.githubusercontent.com/open-web-academy/GuestBook-Tutorial-CORE/master/src/public/MessagesList.gif" width="50%">
