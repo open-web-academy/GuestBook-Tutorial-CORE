@@ -192,8 +192,13 @@ npm run dev
 
 ## Add message
 
+1. To add a new message, you must first enter the text of the new message.
+2. Once this is done, click on the "Add Message" button and accept the transaction in metamask.
+
 <img src="https://raw.githubusercontent.com/open-web-academy/GuestBook-Tutorial-CORE/master/src/public/NewMessage.gif" width="50%">
 
 ## Get Messages
+
+1. To get the list of messages added by users, you only have to go to the "Messages List" option in the menu where a table will be displayed with the entire list of messages saved in the smart contract.
 
 <img src="https://raw.githubusercontent.com/open-web-academy/GuestBook-Tutorial-CORE/master/src/public/MessagesList.gif" width="50%">
